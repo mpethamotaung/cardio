@@ -299,3 +299,106 @@ def test_weakness_against_agent():
     hc = Card("Human Card", 10, 2, 1, skills=[skills.Weakness])
     vnc = do_the_fight([hc], None)
     assert vnc.damagestate.diff == -9
+
+
+# ----- Direct unit tests for Shield -----
+
+
+def test_shield_absorbed_damage_first_call():
+    """Shield absorbs 1 damage on first call in a round."""
+    shield = skills.Shield()
+    absorbed = shield.absorbed_damage(5, fight_round=0)
+    assert absorbed == 1
+
+
+def test_shield_absorbed_damage_same_round():
+    """Shield absorbs 0 damage on second call in same round."""
+    shield = skills.Shield()
+    shield.absorbed_damage(5, fight_round=0)
+    absorbed = shield.absorbed_damage(5, fight_round=0)
+    assert absorbed == 0
+
+
+def test_shield_absorbed_damage_different_round():
+    """Shield absorbs 1 damage again in a new round."""
+    shield = skills.Shield()
+    shield.absorbed_damage(5, fight_round=0)
+    absorbed = shield.absorbed_damage(5, fight_round=1)
+    assert absorbed == 1
+
+
+def test_shield_absorbed_damage_zero_damage():
+    """Shield absorbs 0 when no damage to absorb."""
+    shield = skills.Shield()
+    absorbed = shield.absorbed_damage(0, fight_round=0)
+    assert absorbed == 0
+
+
+def test_shield_pre_fight_resets_state():
+    """Shield pre_fight resets _turns_used to empty list."""
+    shield = skills.Shield()
+    shield._turns_used = [0, 1, 2]
+    shield.pre_fight(None)
+    assert shield._turns_used == []
+
+
+# ----- Direct unit tests for LuckyStrike -----
+
+
+def test_luckystrike_is_lucky():
+    """LuckyStrike is_lucky returns True with lucky seed."""
+    random.seed(1)
+    ls = skills.LuckyStrike()
+    ls.pre_attack(None)
+    assert ls.is_lucky() is True
+
+
+def test_luckystrike_is_unlucky():
+    """LuckyStrike is_lucky returns False with unlucky seed."""
+    random.seed(0)
+    ls = skills.LuckyStrike()
+    ls.pre_attack(None)
+    assert ls.is_lucky() is False
+
+
+def test_luckystrike_post_attack_resets():
+    """LuckyStrike post_attack resets _is_lucky to None."""
+    ls = skills.LuckyStrike()
+    ls._is_lucky = True
+    ls.post_attack(None)
+    assert ls._is_lucky is None
+
+
+def test_luckystrike_power_up():
+    """LuckyStrike power_up_against_agent doubles power."""
+    ls = skills.LuckyStrike()
+    ls._is_lucky = True
+    assert ls.power_up_against_agent(5) == 10
+
+
+def test_luckystrike_power_up_zero():
+    """LuckyStrike power_up_against_agent with zero power stays zero."""
+    ls = skills.LuckyStrike()
+    ls._is_lucky = True
+    assert ls.power_up_against_agent(0) == 0
+
+
+# ----- Direct unit tests for Weakness -----
+
+
+def test_weakness_modify_damage():
+    """Weakness reduces damage by 1."""
+    weakness = skills.Weakness()
+    assert weakness.modify_damage(5) == 4
+
+
+def test_weakness_modify_damage_to_zero():
+    """Weakness reduces damage to minimum of 0."""
+    weakness = skills.Weakness()
+    assert weakness.modify_damage(1) == 0
+
+
+def test_weakness_modify_damage_from_zero():
+    """Weakness with 0 damage stays at 0."""
+    weakness = skills.Weakness()
+    assert weakness.modify_damage(0) == 0
